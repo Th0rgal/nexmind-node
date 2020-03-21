@@ -22,7 +22,10 @@ class Database:
             with open(self.path) as json_file:
                 data = json.load(json_file)
                 self.available_identifiers = data["free"]
-                self.groups = data["groups"]
+                groups = data["groups"]
+                for group_name in groups:
+                    groups[group_name] = set(groups[group_name])
+                self.groups = groups
                 self.items = data["items"]
                 return
 
@@ -31,9 +34,10 @@ class Database:
         self.items = []
 
     def save_data(self):
-
-        data = { "free" : self.available_identifiers, "groups" : self.groups, "items" : self.items }
-
+        groups = self.groups.copy()
+        for group_name in groups:
+            groups[group_name] = list(groups[group_name])
+        data = { "free" : self.available_identifiers, "groups" : groups, "items" : self.items }
         Path( os.path.dirname(self.path) ).mkdir(parents=True, exist_ok=True)
         with open(self.path, 'w') as outfile:
             json.dump(data, outfile)
@@ -51,12 +55,12 @@ class Database:
         smallest_space = self._find_smallest_space(spaces_name)
         condition_spaces = [space_name for space_name in spaces_name if space_name != smallest_space]
 
-        results = []
+        results = set()
 
         for item_id in smallest_space:
             data = self.items[ item_id ]
             if all(conditional_space in data[1] for conditional_space in condition_spaces):
-                results.append(data)
+                results.add(data[0]) # we append the hash
 
         return results
 
@@ -64,10 +68,12 @@ class Database:
         result_set = set()
         for space_name in spaces_name:
             result_set = result_set | self.groups[space_name]
-        print( result_set )
+        result_hashes = set()
+        for id in result_set:
+            result_hashes.add( self.items[id][0] )
+        return result_hashes 
 
-
-    def add_data(self, data):
+    def add_data(self, data): # potential amelioration: avoid duplicates
         if len(self.available_identifiers) > 0:
             id = self.available_identifiers.remove[0]
             self.items[id] = data

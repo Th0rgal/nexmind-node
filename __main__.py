@@ -6,8 +6,9 @@ from storage import atto
 SERVER_URL = "https://s1.nexmind.space/"
 
 db = atto.Database("yolo")
-example_data = ( 18773893988, set(["abc", "def", "ghi"]) )
-db.add_data(example_data)
+example_data = ( 2, ["abc", "ghi"] )
 
 print(db.inter("abc"))
-print(db.sum("def"))
+
+
+print(db.sum("def", "ghi"))
