@@ -8,5 +8,4 @@ def get_path(name):
 # CONSTANTS
 SERVER_URL = "https://s1.nexmind.space/"
 
-print(atto)
 db = atto.Database("yolo")
