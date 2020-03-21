@@ -3,20 +3,6 @@ import json
 import pickle
 from pathlib import Path
 
-
-# allows to serialize sets, see https://stackoverflow.com/a/8230373
-
-class PythonObjectEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, (list, dict, str, int, float, bool, type(None))):
-            return json.JSONEncoder.default(self, obj)
-        return {'_python_object': pickle.dumps(obj)}
-
-def as_python_object(dct):
-    if '_python_object' in dct:
-        return pickle.loads(str(dct['_python_object']))
-    return dct
-
 def get_data_path(name):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", name)
 
@@ -34,7 +20,7 @@ class Database:
 
         if os.path.exists(self.path):
             with open(self.path) as json_file:
-                data = json.load(json_file, object_hook=as_python_object)
+                data = json.load(json_file)
                 self.available_identifiers = data["free"]
                 self.groups = data["groups"]
                 self.items = data["items"]
@@ -48,11 +34,9 @@ class Database:
 
         data = { "free" : self.available_identifiers, "groups" : self.groups, "items" : self.items }
 
-        print(data)
-
         Path( os.path.dirname(self.path) ).mkdir(parents=True, exist_ok=True)
         with open(self.path, 'w') as outfile:
-            json.dump(data, outfile, cls=PythonObjectEncoder)
+            json.dump(data, outfile)
 
     def _find_smallest_space(self, spaces_name):
         minimal_space = self.groups[spaces_name[0]]
