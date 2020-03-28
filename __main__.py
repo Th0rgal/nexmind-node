@@ -5,10 +5,22 @@ from storage import atto
 # CONSTANTS
 SERVER_URL = "https://s1.nexmind.space/"
 
-db = atto.Database("yolo")
-example_data = ( 2, ["abc", "ghi"] )
+async def login(request):
+    print(request)
+    pass
 
-print(db.inter("abc"))
+async def request(request):
+    pass
 
+async def upload(request):
+    pass
 
-print(db.sum("def", "ghi"))
+def main():
+    app = web.Application(client_max_size = 10*2**30) # 10GiB
+    app.add_routes([web.post('/login', login),
+                    web.get('/request', request),
+                    web.get('/upload', upload)])
+    web.run_app(app, port=8080)
+
+if __name__ == '__main__':
+    main()
