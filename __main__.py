@@ -1,4 +1,5 @@
 import os
+import authenticator
 from aiohttp import web
 from storage import atto
 
@@ -18,6 +19,7 @@ async def upload(request):
     pass
 
 def main():
+    authenticator.load()
     app = web.Application(client_max_size = 10*2**30) # 10GiB
     app.add_routes([web.get('/debug', debug),
                     web.post('/login', login),
