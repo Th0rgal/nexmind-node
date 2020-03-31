@@ -10,7 +10,18 @@ async def debug(request):
     return web.Response(body="It seems to be working")
 
 async def login(request):
-    pass
+    data = await request.post()
+    username = data["username"]
+    password = data["password"]
+
+    connected = False
+    if authenticator.login(username, password) == None:
+        connected = True
+        token = ""
+
+    return web.json_response({
+        "connected" : connected
+    })
 
 async def request(request):
     pass
