@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import argon2
+import exceptions
 
 # VARIABLES
 connection = None
@@ -68,7 +69,7 @@ def register(username, password):
         cursor.execute("INSERT INTO users VALUES (?, ?)", (username, hash))
 
     except sqlite3.IntegrityError as error:
-        return "username already taken"
+        raise exceptions.Unauthorized("username taken")
 
     connection.commit()
 
@@ -79,7 +80,7 @@ def login(username, password):
     result = cursor.fetchone()
 
     if len(result) != 1:
-        return "not registered"
+        raise exceptions.Unauthorized("not registered")
     hash = result[0]
 
     try:
@@ -93,4 +94,4 @@ def login(username, password):
             connection.commit()
 
     except argon2.exceptions.VerifyMismatchError as error:
-        return "wrong password"
+        raise exceptions.Unauthorized("wrong password")
