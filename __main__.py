@@ -1,4 +1,5 @@
 import jwt
+import secrets
 import exceptions
 import authenticator
 from aiohttp import web
@@ -8,7 +9,8 @@ from datetime import datetime, timedelta
 # CONSTANTS
 SERVER_URL = "https://s1.nexmind.space/"
 JWT_ALGORITHM = 'HS256'
-JWT_EXP_DELTA_SECONDS = 20
+JWT_SECRET = secrets.token_bytes(16)
+JWT_EXP_DELTA_SECONDS = 24*60*20 # 24 hours
 
 @web.middleware
 async def error_middleware(request, handler):
@@ -33,8 +35,26 @@ async def error_middleware(request, handler):
 
     return web.json_response({'error': message})
 
+async def auth_middleware(app, handler):
+    async def middleware(request):
+        request.username = None
+        jwt_token = request.headers.get('authorization', None)
+        print(jwt_token)
+        if jwt_token:
+            try:
+                payload = jwt.decode(jwt_token, JWT_SECRET,
+                                     algorithms=[JWT_ALGORITHM])
+                request.username = payload['name']
+            except (jwt.DecodeError, jwt.ExpiredSignatureError):
+                pass
+
+        return await handler(request)
+    return middleware
+
 async def debug(request):
-    return web.Response(body="It seems to be working")
+    if request.username:
+        return web.Response(body=("Connected and logged " + request.username))
+    return web.Response(body="Connected, not logged")
 
 async def login(request):
     data = await request.post()
@@ -46,7 +66,7 @@ async def login(request):
         'name': username,
         'exp': datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)
     }
-    token = jwt.encode(payload, password, JWT_ALGORITHM)
+    token = jwt.encode(payload, JWT_SECRET, JWT_ALGORITHM)
     return web.json_response({
         "token" : token.decode('utf-8')
     })
@@ -59,7 +79,7 @@ async def upload(request):
 
 def main():
     authenticator.load()
-    app = web.Application(middlewares = [error_middleware], client_max_size = 10*2**30) # 10GiB
+    app = web.Application(middlewares = [error_middleware, auth_middleware], client_max_size = 10*2**30) # 10GiB
     app.add_routes([web.get('/debug', debug),
                     web.post('/login', login),
                     web.post('/request', request),
