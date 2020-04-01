@@ -1,11 +1,14 @@
-import os
+import jwt
 import exceptions
 import authenticator
 from aiohttp import web
 from storage import atto
+from datetime import datetime, timedelta
 
 # CONSTANTS
 SERVER_URL = "https://s1.nexmind.space/"
+JWT_ALGORITHM = 'HS256'
+JWT_EXP_DELTA_SECONDS = 20
 
 @web.middleware
 async def error_middleware(request, handler):
@@ -38,13 +41,14 @@ async def login(request):
     username = data["username"]
     password = data["password"]
 
-    connected = False
-    if authenticator.login(username, password) == None:
-        connected = True
-        token = ""
-
+    authenticator.login(username, password)
+    payload = {
+        'name': username,
+        'exp': datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)
+    }
+    token = jwt.encode(payload, password, JWT_ALGORITHM)
     return web.json_response({
-        "connected" : connected
+        "token" : token.decode('utf-8')
     })
 
 async def request(request):
