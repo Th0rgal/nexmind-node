@@ -13,6 +13,7 @@ JWT_SECRET = secrets.token_bytes(16)
 JWT_EXP_DELTA_SECONDS = 24*60*20 # 24 hours
 EXPIRED_TOKENS = set()
 
+@web.middleware
 async def error_middleware(request, handler):
     try:
         response = await handler(request)
