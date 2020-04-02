@@ -11,6 +11,7 @@ SERVER_URL = "https://s1.nexmind.space/"
 JWT_ALGORITHM = 'HS256'
 JWT_SECRET = secrets.token_bytes(16)
 JWT_EXP_DELTA_SECONDS = 24*60*20 # 24 hours
+EXPIRED_TOKENS = set()
 
 @web.middleware
 async def error_middleware(request, handler):
@@ -39,9 +40,10 @@ async def auth_middleware(app, handler):
     async def middleware(request):
         request.username = None
         jwt_token = request.headers.get('authorization', None)
-        print(jwt_token)
         if jwt_token:
             try:
+                if jwt_token in EXPIRED_TOKENS:
+                    raise exceptions.UserError("blacklisted token")
                 payload = jwt.decode(jwt_token, JWT_SECRET,
                                      algorithms=[JWT_ALGORITHM])
                 request.username = payload['name']
@@ -71,6 +73,15 @@ async def login(request):
         "token" : token.decode('utf-8')
     })
 
+async def logout(request):
+    if request.username:
+        EXPIRED_TOKENS.add(request.headers.get('authorization', None))
+        return web.json_response({
+            "disconnected" : True
+        })
+    else:
+        raise exceptions.Unauthorized("no token to blacklist")
+
 async def request(request):
     pass
 
@@ -82,6 +93,7 @@ def main():
     app = web.Application(middlewares = [error_middleware, auth_middleware], client_max_size = 10*2**30) # 10GiB
     app.add_routes([web.get('/debug', debug),
                     web.post('/login', login),
+                    web.post('/logout', logout),
                     web.post('/request', request),
                     web.post('/upload', upload)])
     web.run_app(app, port=8080)
