@@ -108,7 +108,6 @@ async def upload(request):
 
     # file
     field = await reader.next()
-    filename = field.filename
 
     # cannot rely on Content-Length because of chunked transfer
     size = 0
@@ -125,9 +124,6 @@ async def upload(request):
         "stored" : True,
         "size" : size
     })
-
-    return web.Response(text='{} sized of {} successfully stored'
-                             ''.format(filename, size))
 
 def main():
     authenticator.load()
