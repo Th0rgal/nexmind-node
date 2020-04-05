@@ -1,5 +1,6 @@
-### Database ###
+### Storage ###
 *.db
+files
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
