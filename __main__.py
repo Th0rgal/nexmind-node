@@ -1,5 +1,6 @@
 import os
 import jwt
+import json
 import secrets
 import storage
 import hashlib
@@ -32,10 +33,6 @@ async def error_middleware(request, handler):
     except web.HTTPException as exception:
         message = exception.reason
         status = 500
-
-    except Exception as exception:
-        message = exception.args[0]
-        status = exception.code
 
     return web.json_response({'error': message})
 
@@ -123,7 +120,7 @@ async def download(request):
 async def upload(request):
 
     """ EXAMPLE (curl)
-    curl -H "Authorization:auth" -F "hash=617Y7DY73y2" -F "chunk=0" 
+    curl -H "Authorization:auth" -F "name=Awesome Background" -F "type=image" -F "desc=A cool image" -F "hash=617Y7DY73y2" -F "chunk=0" 
     -F "spaces=['A','B']" -F "file=@./background.jpg" -X POST localhost:8080/upload
     """
 
@@ -133,6 +130,18 @@ async def upload(request):
         raise exceptions.Unauthorized("a valid token is needed")
 
     reader = await request.multipart()
+
+    field = await reader.next()
+    assert field.name == "name"
+    name = (await field.read()).decode("utf-8")
+
+    field = await reader.next()
+    assert field.name == "type"
+    content_type = (await field.read()).decode("utf-8")
+
+    field = await reader.next()
+    assert field.name == "desc"
+    description = (await field.read()).decode("utf-8")
 
     # sha256
     field = await reader.next()
@@ -161,6 +170,10 @@ async def upload(request):
                 break
             size += len(chunk)
             f.write(chunk)
+
+    # save file infos
+    with open(storage.get_file("." + hash), 'w') as dotfile:
+        json.dump({ "name" : name, "type" : content_type, "desc" : description }, dotfile)
 
     storage.atto.Database(database_name).add_data( (hash, spaces) )
     return web.json_response({
