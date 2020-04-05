@@ -131,6 +131,9 @@ async def upload(request):
 
     reader = await request.multipart()
 
+
+    # infos
+
     field = await reader.next()
     assert field.name == "name"
     name = (await field.read()).decode("utf-8")
@@ -142,6 +145,7 @@ async def upload(request):
     field = await reader.next()
     assert field.name == "desc"
     description = (await field.read()).decode("utf-8")
+
 
     # sha256
     field = await reader.next()
