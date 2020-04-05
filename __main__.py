@@ -56,6 +56,11 @@ async def debug(request):
     return web.Response(body="Connected, not logged")
 
 async def login(request):
+
+    """ EXAMPLE (curl)
+    curl --data "username=thomas&password=yolo" localhost:8080/login
+    """
+
     data = await request.post()
     username = data["username"]
     password = data["password"]
@@ -83,6 +88,11 @@ async def request(request):
     pass
 
 async def upload(request):
+
+    """ EXAMPLE (curl)
+    curl -H "Authorization:auth" -F "hash=617Y7DY73y2" -F "chunk=0" 
+    -F "spaces=['A','B']" -F "file=@./background.jpg" -X POST localhost:8080/upload
+    """
 
     if request.username:
         database_name = hashlib.sha256(request.username.encode('utf-8')).hexdigest()
