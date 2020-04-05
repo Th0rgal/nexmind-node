@@ -121,6 +121,11 @@ async def upload(request):
             f.write(chunk)
 
     storage.atto.Database(database_name).add_data( (hash, spaces) )
+    return web.json_response({
+        "stored" : True,
+        "size" : size
+    })
+
     return web.Response(text='{} sized of {} successfully stored'
                              ''.format(filename, size))
 
