@@ -3,3 +3,6 @@ class UserError(Exception):
 
 class Unauthorized(Exception):
     code = 401
+
+class NotFound(Exception):
+    code = 404

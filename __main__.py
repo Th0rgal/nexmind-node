@@ -1,16 +1,18 @@
+import os
 import jwt
 import secrets
 import storage
 import hashlib
+import aiofiles
 import exceptions
 import authenticator
-from aiohttp import web
+from aiohttp import web, streamer
 from datetime import datetime, timedelta
 
 # CONSTANTS
 SERVER_URL = "https://s1.nexmind.space/"
 JWT_ALGORITHM = 'HS256'
-JWT_SECRET = secrets.token_bytes(16)
+JWT_SECRET = "0"#secrets.token_bytes(16)
 JWT_EXP_DELTA_SECONDS = 24*60*20 # 24 hours
 EXPIRED_TOKENS = set()
 
@@ -30,6 +32,10 @@ async def error_middleware(request, handler):
     except web.HTTPException as exception:
         message = exception.reason
         status = 500
+
+    except Exception as exception:
+        message = exception.args[0]
+        status = exception.code
 
     return web.json_response({'error': message})
 
@@ -84,17 +90,12 @@ async def logout(request):
     else:
         raise exceptions.Unauthorized("no token to blacklist")
 
-@streamer
-async def file_sender(writer, file_path=None):
-    """
-    This function will read large file chunk by chunk and send it through HTTP
-    without reading them into memory
-    """
-    with open(file_path, 'rb') as f:
-        chunk = f.read(2 ** 16)
+async def file_sender(file_name=None):
+    async with aiofiles.open(file_name, 'rb') as f:
+        chunk = await f.read(64*1024)
         while chunk:
-            await writer.write(chunk)
-            chunk = f.read(2 ** 16)
+            yield chunk
+            chunk = await f.read(64*1024)
 
 async def download(request):
 
@@ -104,26 +105,20 @@ async def download(request):
         raise exceptions.Unauthorized("a valid token is needed")
 
     data = await request.post()
-    hash = data["hash"].split()
-    
+    hash = data["hash"]
+
     headers = {
-        "Content-disposition": "attachment; filename={file_name}".format(file_name=file_name)
+        "Content-disposition": "attachment; filename={}".format(hash)
     }
 
-    file_path = os.path.join('data', file_name)
-
+    file_path = storage.get_file(hash)
     if not os.path.exists(file_path):
-        return web.Response(
-            body='File <{file_name}> does not exist'.format(file_name=file_name),
-            status=404
-        )
+        raise exceptions.NotFound("file <{}> does not exist".format(hash))
 
     return web.Response(
-        body=file_sender(file_path=file_path),
+        body=file_sender(file_path),
         headers=headers
     )
-
-    pass
 
 async def upload(request):
 
@@ -179,7 +174,7 @@ def main():
     app.add_routes([web.get('/debug', debug),
                     web.post('/login', login),
                     web.post('/logout', logout),
-                    web.post('/request', request),
+                    web.post('/download', download),
                     web.post('/upload', upload)])
     web.run_app(app, port=8080)
 
