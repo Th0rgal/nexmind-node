@@ -1,10 +1,10 @@
 import jwt
 import secrets
+import storage
 import hashlib
 import exceptions
 import authenticator
 from aiohttp import web
-from storage import atto
 from datetime import datetime, timedelta
 
 # CONSTANTS
@@ -112,9 +112,7 @@ async def upload(request):
 
     # cannot rely on Content-Length because of chunked transfer
     size = 0
-    print("test")
-    with open(atto.get_data_path(hash), 'wb') as f:
-        print("test2")
+    with open(storage.get_files_folder(hash), 'wb') as f:
         while True:
             chunk = await field.read_chunk()  # 8192 bytes by default.
             if not chunk:
@@ -122,7 +120,7 @@ async def upload(request):
             size += len(chunk)
             f.write(chunk)
 
-    atto.Database(database_name).add_data( (hash, spaces) )
+    storage.atto.Database(database_name).add_data( (hash, spaces) )
     return web.Response(text='{} sized of {} successfully stored'
                              ''.format(filename, size))
 
