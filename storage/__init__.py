@@ -1,2 +1,2 @@
-from .storage import get_files_folder
+from .storage import get_file
 from . import atto

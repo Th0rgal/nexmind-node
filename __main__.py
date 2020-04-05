@@ -84,7 +84,45 @@ async def logout(request):
     else:
         raise exceptions.Unauthorized("no token to blacklist")
 
-async def request(request):
+@streamer
+async def file_sender(writer, file_path=None):
+    """
+    This function will read large file chunk by chunk and send it through HTTP
+    without reading them into memory
+    """
+    with open(file_path, 'rb') as f:
+        chunk = f.read(2 ** 16)
+        while chunk:
+            await writer.write(chunk)
+            chunk = f.read(2 ** 16)
+
+async def download(request):
+
+    if request.username:
+        database_name = hashlib.sha256(request.username.encode('utf-8')).hexdigest()
+    else:
+        raise exceptions.Unauthorized("a valid token is needed")
+
+    data = await request.post()
+    hash = data["hash"].split()
+    
+    headers = {
+        "Content-disposition": "attachment; filename={file_name}".format(file_name=file_name)
+    }
+
+    file_path = os.path.join('data', file_name)
+
+    if not os.path.exists(file_path):
+        return web.Response(
+            body='File <{file_name}> does not exist'.format(file_name=file_name),
+            status=404
+        )
+
+    return web.Response(
+        body=file_sender(file_path=file_path),
+        headers=headers
+    )
+
     pass
 
 async def upload(request):
@@ -121,7 +159,7 @@ async def upload(request):
 
     # cannot rely on Content-Length because of chunked transfer
     size = 0
-    with open(storage.get_files_folder(hash), 'wb') as f:
+    with open(storage.get_file(hash), 'wb') as f:
         while True:
             chunk = await field.read_chunk()  # 8192 bytes by default.
             if not chunk:
