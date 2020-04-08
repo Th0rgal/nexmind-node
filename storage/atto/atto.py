@@ -1,6 +1,5 @@
 import os
 import json
-import pickle
 from pathlib import Path
 
 def get_data_path(name):
