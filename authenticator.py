@@ -79,7 +79,7 @@ def login(username, password):
     cursor.execute("SELECT hash FROM users WHERE username=?", (username,))
     result = cursor.fetchone()
 
-    if len(result) != 1:
+    if result == None:
         raise exceptions.Unauthorized("not registered")
     hash = result[0]
 
