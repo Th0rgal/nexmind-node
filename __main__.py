@@ -157,7 +157,6 @@ async def upload(request):
     # chunk index
     field = await reader.next()
     assert field.name == "chunk"
-    chunk = int(await field.read())
 
     # spaces
     field = await reader.next()
