@@ -87,7 +87,7 @@ async def logout(request):
             "disconnected" : True
         })
     else:
-        raise exceptions.Unauthorized("no token to blacklist")
+        raise exceptions.Unauthorized("No token to blacklist")
 
 async def file_sender(file_name=None):
     async with aiofiles.open(file_name, 'rb') as f:
@@ -101,7 +101,7 @@ async def download(request):
     if request.username:
         database_name = hashlib.sha256(request.username.encode('utf-8')).hexdigest()
     else:
-        raise exceptions.Unauthorized("a valid token is needed")
+        raise exceptions.Unauthorized("A valid token is needed")
 
     data = await request.post()
     hash = data["hash"]
@@ -129,7 +129,7 @@ async def upload(request):
     if request.username:
         database_name = hashlib.sha256(request.username.encode('utf-8')).hexdigest()
     else:
-        raise exceptions.Unauthorized("a valid token is needed")
+        raise exceptions.Unauthorized("A valid token is needed")
 
     reader = await request.multipart()
 

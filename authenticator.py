@@ -69,7 +69,7 @@ def register(username, password):
         cursor.execute("INSERT INTO users VALUES (?, ?)", (username, hash))
 
     except sqlite3.IntegrityError as error:
-        raise exceptions.Unauthorized("username taken")
+        raise exceptions.Unauthorized("Username taken")
 
     connection.commit()
 
@@ -94,4 +94,4 @@ def login(username, password):
             connection.commit()
 
     except argon2.exceptions.VerifyMismatchError as error:
-        raise exceptions.Unauthorized("wrong password")
+        raise exceptions.Unauthorized("Wrong password")
