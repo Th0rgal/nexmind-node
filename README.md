@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <img src="https://nexmind.space/vector_logo.svg" alt="Nexmind" width="256">
+  <img src="https://nexmind.space/logo.svg" alt="Nexmind" width="256">
   <br>
 </h1>
 
