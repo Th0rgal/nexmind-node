@@ -7,6 +7,8 @@ import hashlib
 import aiofiles
 import exceptions
 import authenticator
+
+import aiohttp_cors
 from aiohttp import web, streamer
 from datetime import datetime, timedelta
 
@@ -33,8 +35,9 @@ async def error_middleware(request, handler):
     except web.HTTPException as exception:
         message = exception.reason
         status = 500
+    print(message)
 
-    return web.json_response({'error': message})
+    return web.json_response({'error': message}, status=status)
 
 async def auth_middleware(app, handler):
     async def middleware(request):
@@ -63,20 +66,19 @@ async def login(request):
     """ EXAMPLE (curl)
     curl --data "username=thomas&password=yolo" localhost:8080/login
     """
-
     data = await request.post()
+    if "username" not in data or "password" not in data:
+        raise exceptions.UserError("username and password fields expected")
+
     username = data["username"]
     password = data["password"]
-
     authenticator.login(username, password)
     payload = {
         'name': username,
         'exp': datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)
     }
     token = jwt.encode(payload, JWT_SECRET, JWT_ALGORITHM)
-    return web.json_response({
-        "token" : token.decode('utf-8')
-    })
+    return web.json_response({ "token" : token.decode('utf-8') })
 
 async def logout(request):
     if request.username:
@@ -193,6 +195,13 @@ def main():
                     web.post('/logout', logout),
                     web.post('/download', download),
                     web.post('/upload', upload)])
+    cors = aiohttp_cors.setup(app, defaults={ "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+        )})
+    for route in list(app.router.routes()):
+        cors.add(route)
     web.run_app(app, port=8080)
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 class UserError(Exception):
     code = 400
 
-class Unauthorized(Exception):
+class Unauthorized(UserError):
     code = 401
 
-class NotFound(Exception):
+class NotFound(UserError):
     code = 404
