@@ -1,9 +1,9 @@
 import authenticator
-from web import http_server
+import web
 
 def main():
     authenticator.load()
-    http_server.load()
+    web.load()
 
 if __name__ == '__main__':
     main()
