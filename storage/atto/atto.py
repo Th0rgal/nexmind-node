@@ -54,7 +54,10 @@ class Database:
         spaces = []
         for space_name in spaces_name:
             if space_name in self.groups and space_name not in spaces:
-                spaces.append(space_name) 
+                spaces.append(space_name)
+
+        if not spaces:
+            return spaces
 
         smallest_space = self._find_smallest_space(spaces)
         condition_spaces = [space_name for space_name in spaces if space_name != smallest_space]
