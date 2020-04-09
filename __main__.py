@@ -110,12 +110,12 @@ async def search(request):
 
     results = storage.atto.Database(database_name).inter(data["spaces"].split())
 
-    output = []
+    output = {}
     for result in results:
         with open(storage.get_file("." + result[0])) as json_file:
             dotfile_content = json.load(json_file)
             dotfile_content["spaces"] = list(result[1])
-            output.append(dotfile_content)
+            output[result[0]] = dotfile_content
 
     return web.json_response({
         "results" : output
