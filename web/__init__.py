@@ -1,1 +1,1 @@
-from .web import load
+from .web import Web

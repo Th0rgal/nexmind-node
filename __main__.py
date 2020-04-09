@@ -1,9 +1,9 @@
-import authenticator
-import web
+from authenticator import AuthDatabase
+from web import Web
 
 def main():
-    authenticator.load()
-    web.load()
+    auth_database = AuthDatabase()
+    Web(auth_database).start()
 
 if __name__ == '__main__':
     main()

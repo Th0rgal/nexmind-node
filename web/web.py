@@ -4,66 +4,63 @@ import exceptions
 import aiohttp_cors
 
 from aiohttp import web
-from . import queries
+from .queries import Queries
 
-def load():
-    app = web.Application(middlewares = [error_middleware, auth_middleware], client_max_size = 10*2**30) # 10GiB
-    app.add_routes([web.get('/debug', queries.debug),
-                    web.post('/login', queries.login),
-                    web.post('/logout', queries.logout),
-                    web.post('/search', queries.search),
-                    web.post('/download', queries.download),
-                    web.post('/upload', queries.upload)])
-    cors = aiohttp_cors.setup(app, defaults={ "*": aiohttp_cors.ResourceOptions(
-            allow_credentials=True,
-            expose_headers="*",
-            allow_headers="*",
-        )})
-    for route in list(app.router.routes()):
-        cors.add(route)
-    web.run_app(app, port=8080)
+class Web():
 
+    def __init__(self, auth_database):
+        self.queries = Queries(auth_database)
+        self.app = web.Application(middlewares = [self.error_middleware, self.auth_middleware], client_max_size = 10*2**30) # 10GiB
+        self.app.add_routes([web.get('/debug', self.queries.debug),
+                        web.post('/login', self.queries.login),
+                        web.post('/logout', self.queries.logout),
+                        web.post('/search', self.queries.search),
+                        web.post('/download', self.queries.download),
+                        web.post('/upload', self.queries.upload)])
+        cors = aiohttp_cors.setup(self.app, defaults={ "*": aiohttp_cors.ResourceOptions(
+                allow_credentials=True,
+                expose_headers="*",
+                allow_headers="*",
+            )})
+        for route in list(self.app.router.routes()):
+            cors.add(route)
 
-@web.middleware
-async def error_middleware(request, handler):
-    try:
-        response = await handler(request)
-        if response.status < 400: # if no error coccured
-            return response
-        message = response.message
-        status = responses.status
+    def start(self):
+        web.run_app(self.app, port=8080)
 
-    except exceptions.UserError as exception:
-        message = exception.args[0]
-        status = exception.code
+    @web.middleware
+    async def error_middleware(self, request, handler):
+        try:
+            response = await handler(request)
+            if response.status < 400: # if no error coccured
+                return response
+            message = response.message
+            status = responses.status
 
-    except web.HTTPException as exception:
-        message = exception.reason
-        status = 500
-    print(message)
+        except exceptions.UserError as exception:
+            message = exception.args[0]
+            status = exception.code
 
-    return web.json_response({'error': message}, status=status)
+        except web.HTTPException as exception:
+            message = exception.reason
+            status = 500
+        print(message)
 
-async def auth_middleware(app, handler):
-    async def middleware(request):
-        request.username = None
-        jwt_token = request.headers.get('authorization', None)
-        if jwt_token:
-            try:
-                if jwt_token in queries.EXPIRED_TOKENS:
-                    raise exceptions.UserError("blacklisted token")
-                payload = jwt.decode(jwt_token, queries.JWT_SECRET,
-                                     algorithms=[queries.JWT_ALGORITHM])
-                request.username = payload['name']
-            except (jwt.DecodeError, jwt.ExpiredSignatureError):
-                pass
+        return web.json_response({'error': message}, status=status)
 
-        return await handler(request)
-    return middleware
+    async def auth_middleware(self, app, handler):
+        async def middleware(request):
+            request.username = None
+            jwt_token = request.headers.get('authorization', None)
+            if jwt_token:
+                try:
+                    if jwt_token in self.queries.EXPIRED_TOKENS:
+                        raise exceptions.UserError("blacklisted token")
+                    payload = jwt.decode(jwt_token, self.queries.JWT_SECRET,
+                                        algorithms=[self.queries.JWT_ALGORITHM])
+                    request.username = payload['name']
+                except (jwt.DecodeError, jwt.ExpiredSignatureError):
+                    pass
 
-async def file_sender(file_name=None):
-    async with aiofiles.open(file_name, 'rb') as f:
-        chunk = await f.read(64*1024)
-        while chunk:
-            yield chunk
-            chunk = await f.read(64*1024)
+            return await handler(request)
+        return middleware
