@@ -50,16 +50,16 @@ class Database:
                     minimal_space = space
         return minimal_space
 
-    def inter(self, *spaces_name):
+    def inter(self, spaces_name):
         smallest_space = self._find_smallest_space(spaces_name)
         condition_spaces = [space_name for space_name in spaces_name if space_name != smallest_space]
 
-        results = set()
+        results = []
 
         for item_id in smallest_space:
             data = self.items[ item_id ]
             if all(conditional_space in data[1] for conditional_space in condition_spaces):
-                results.add(data[0]) # we append the hash
+                results.append(data) # we append the data
 
         return results
 
@@ -67,10 +67,10 @@ class Database:
         result_set = set()
         for space_name in spaces_name:
             result_set = result_set | self.groups[space_name]
-        result_hashes = set()
+        result = []
         for id in result_set:
-            result_hashes.add( self.items[id][0] )
-        return result_hashes 
+            result.append( self.items[id] )
+        return result
 
     def add_data(self, data): # potential amelioration: avoid duplicates
         if len(self.available_identifiers) > 0:
@@ -79,7 +79,7 @@ class Database:
         else:
             id = len(self.items)
             self.items.append(data)
-        
+
         for space_name in data[1]:
             if space_name in self.groups:
                 space = self.groups[space_name]

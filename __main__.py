@@ -6,9 +6,10 @@ import storage
 import hashlib
 import aiofiles
 import exceptions
+import aiohttp_cors
 import authenticator
 
-import aiohttp_cors
+from pathlib import Path
 from aiohttp import web, streamer
 from datetime import datetime, timedelta
 
@@ -96,6 +97,30 @@ async def file_sender(file_name=None):
             yield chunk
             chunk = await f.read(64*1024)
 
+async def search(request):
+
+    if request.username:
+        database_name = hashlib.sha256(request.username.encode('utf-8')).hexdigest()
+    else:
+        raise exceptions.Unauthorized("A valid token is needed")
+
+    data = await request.post()
+    if "spaces" not in data:
+        raise exceptions.UserError("you must specify spaces")
+
+    results = storage.atto.Database(database_name).inter(data["spaces"].split())
+
+    output = []
+    for result in results:
+        with open(storage.get_file("." + result[0])) as json_file:
+            dotfile_content = json.load(json_file)
+            dotfile_content["spaces"] = list(result[1])
+            output.append(dotfile_content)
+
+    return web.json_response({
+        "results" : output
+    })
+
 async def download(request):
 
     if request.username:
@@ -166,6 +191,9 @@ async def upload(request):
     # file
     field = await reader.next()
 
+    # create files folder if not created
+    Path( storage.get_folder() ).mkdir(parents=True, exist_ok=True)
+
     # cannot rely on Content-Length because of chunked transfer
     size = 0
     with open(storage.get_file(hash), 'wb') as f:
@@ -192,6 +220,7 @@ def main():
     app.add_routes([web.get('/debug', debug),
                     web.post('/login', login),
                     web.post('/logout', logout),
+                    web.post('/search', search),
                     web.post('/download', download),
                     web.post('/upload', upload)])
     cors = aiohttp_cors.setup(app, defaults={ "*": aiohttp_cors.ResourceOptions(
