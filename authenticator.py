@@ -3,8 +3,8 @@ import sqlite3
 import argon2
 import exceptions
 
-class AuthDatabase():
 
+class AuthDatabase:
     def __init__(self):
         self.password_hasher = argon2.PasswordHasher()
         self.connection = self._create_connection(self._get_database_file())
@@ -12,7 +12,7 @@ class AuthDatabase():
             self._create_users_table(connection)
 
     def register(self, username, password):
-        
+
         cursor = self.connection.cursor()
         hash = password_hasher.hash(password)
 
@@ -38,9 +38,9 @@ class AuthDatabase():
             self.password_hasher.verify(hash, password)
             if self.password_hasher.check_needs_rehash(hash):
                 hash = self.password_hasher.hash(password)
-                sql_hash_updater = ''' UPDATE users
+                sql_hash_updater = """ UPDATE users
                         SET hash = ?
-                        WHERE username = ?'''
+                        WHERE username = ?"""
                 cursor.execute(sql_hash_updater, (hash, username))
                 self.connection.commit()
 
@@ -48,7 +48,9 @@ class AuthDatabase():
             raise exceptions.Unauthorized("Wrong password")
 
     def _get_database_file(self):
-        return os.path.join(os.path.dirname(os.path.realpath(__file__)), "storage/", "users.db")
+        return os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "storage/", "users.db"
+        )
 
     def _create_connection(self, db_file):
         """ create a database self.connection to a SQLite database """
@@ -67,12 +69,13 @@ class AuthDatabase():
         """
         cursor = connection.cursor()
 
-        #get the count of tables with the name
-        cursor.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='users' ''')
+        # get the count of tables with the name
+        cursor.execute(
+            """ SELECT count(name) FROM sqlite_master WHERE type='table' AND name='users' """
+        )
 
-        #if the count is 1, then table exists
-        return cursor.fetchone()[0]==1
-
+        # if the count is 1, then table exists
+        return cursor.fetchone()[0] == 1
 
     def _create_users_table(self, connection):
         """ create a users table

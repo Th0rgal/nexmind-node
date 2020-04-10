@@ -2,11 +2,12 @@ import os
 import json
 from pathlib import Path
 
+
 def get_data_path(name):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", name)
 
-class Database:
 
+class Database:
     def __init__(self, name):
         self.name = name
         self.path = get_data_path(name)
@@ -14,7 +15,9 @@ class Database:
 
     def load_data(self):
 
-        if self.name.endswith(".py") or self.name.startswith("."): # should never be triggered
+        if self.name.endswith(".py") or self.name.startswith(
+            "."
+        ):  # should never be triggered
             return
 
         if os.path.exists(self.path):
@@ -36,9 +39,13 @@ class Database:
         groups = self.groups.copy()
         for group_name in groups:
             groups[group_name] = list(groups[group_name])
-        data = { "free" : self.available_identifiers, "groups" : groups, "items" : self.items }
-        Path( os.path.dirname(self.path) ).mkdir(parents=True, exist_ok=True)
-        with open(self.path, 'w') as outfile:
+        data = {
+            "free": self.available_identifiers,
+            "groups": groups,
+            "items": self.items,
+        }
+        Path(os.path.dirname(self.path)).mkdir(parents=True, exist_ok=True)
+        with open(self.path, "w") as outfile:
             json.dump(data, outfile)
 
     def _find_smallest_space(self, spaces_name):
@@ -60,14 +67,18 @@ class Database:
             return spaces
 
         smallest_space = self._find_smallest_space(spaces)
-        condition_spaces = [space_name for space_name in spaces if space_name != smallest_space]
+        condition_spaces = [
+            space_name for space_name in spaces if space_name != smallest_space
+        ]
 
         results = []
 
         for item_id in smallest_space:
-            data = self.items[ item_id ]
-            if all(conditional_space in data[1] for conditional_space in condition_spaces):
-                results.append(data) # we append the data
+            data = self.items[item_id]
+            if all(
+                conditional_space in data[1] for conditional_space in condition_spaces
+            ):
+                results.append(data)  # we append the data
 
         return results
 
@@ -77,10 +88,10 @@ class Database:
             result_set = result_set | self.groups[space_name]
         result = []
         for id in result_set:
-            result.append( self.items[id] )
+            result.append(self.items[id])
         return result
 
-    def add_data(self, data): # potential amelioration: avoid duplicates
+    def add_data(self, data):  # potential amelioration: avoid duplicates
         if len(self.available_identifiers) > 0:
             id = self.available_identifiers.remove[0]
             self.items[id] = data
@@ -91,9 +102,9 @@ class Database:
         for space_name in data[1]:
             if space_name in self.groups:
                 space = self.groups[space_name]
-                space.add( id )
+                space.add(id)
             else:
-                self.groups[space_name] = { id }
+                self.groups[space_name] = {id}
         self.save_data()
 
     def remove_data(self, data):
