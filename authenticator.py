@@ -30,7 +30,7 @@ class AuthDatabase:
         cursor.execute("SELECT hash FROM users WHERE username=?", (username,))
         result = cursor.fetchone()
 
-        if result == None:
+        if not result:
             raise exceptions.Unauthorized("not registered")
         hash = result[0]
 

@@ -75,9 +75,7 @@ class Queries:
 
     async def download(self, request):
 
-        if request.username:
-            database_name = hashlib.sha256(request.username.encode("utf-8")).hexdigest()
-        else:
+        if not request.username:
             raise exceptions.Unauthorized("A valid token is needed")
 
         data = await request.post()
