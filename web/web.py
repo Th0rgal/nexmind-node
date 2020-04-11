@@ -1,5 +1,4 @@
 import jwt
-import aiofiles
 import exceptions
 import aiohttp_cors
 
