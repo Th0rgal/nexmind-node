@@ -87,7 +87,7 @@ class Queries:
         if not os.path.exists(file_path):
             raise exceptions.NotFound("file <{}> does not exist".format(hash))
 
-        return web.Response(body=file_sender(file_path), headers=headers)
+        return web.Response(body=self._file_sender(file_path), headers=headers)
 
     async def upload(self, request):
 
@@ -156,7 +156,7 @@ class Queries:
         storage.atto.Database(database_name).add_data((hash, spaces))
         return web.json_response({"stored": True, "size": size})
 
-    async def _file_sender(file_name=None):
+    async def _file_sender(self, file_name=None):
         async with aiofiles.open(file_name, "rb") as f:
             chunk = await f.read(64 * 1024)
             while chunk:
