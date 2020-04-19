@@ -53,6 +53,10 @@ class Web:
         except web.HTTPException as exception:
             message = exception.reason
             status = 500
+
+        except Exception as exception:
+            message = exception.args[0]
+            status = 500
         print(message)
 
         return web.json_response({"error": message}, status=status)
