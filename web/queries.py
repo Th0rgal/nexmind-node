@@ -1,12 +1,14 @@
 import os
 import jwt
 import json
-import storage
+import urllib
 import hashlib
+import storage
+import aiofiles
 import exceptions
 
 from pathlib import Path
-from aiohttp import web
+from aiohttp import web, MultipartWriter
 from datetime import datetime, timedelta
 
 
@@ -81,13 +83,28 @@ class Queries:
         data = await request.post()
         hash = data["hash"]
 
-        headers = {"Content-disposition": "attachment; filename={}".format(hash)}
-
         file_path = storage.get_file(hash)
-        if not os.path.exists(file_path):
+        dotfile_path = storage.get_file("." + hash)
+        if not os.path.exists(file_path) or not os.path.exists(dotfile_path):
             raise exceptions.NotFound("file <{}> does not exist".format(hash))
+        with open(dotfile_path) as dotfile:
+            dotfile_content = json.load(dotfile)
+            name = dotfile_content["name"]
 
-        return web.Response(body=self._file_sender(file_path), headers=headers)
+        response = web.StreamResponse()
+        response.headers['Content-Type'] = 'application/octet-stream'
+        response.headers['Content-Disposition'] = "attachment; filename*=UTF-8''{}".format(
+            urllib.parse.quote(name, safe="")  # replace with the filename
+        )
+        response.enable_chunked_encoding()
+        await response.prepare(request)
+
+        with open(file_path, 'rb') as fd:  # replace with the path
+            for chunk in iter(lambda: fd.read(1024), b""):
+                await response.write(chunk)
+        await response.write_eof()
+
+        return response
 
     async def upload(self, request):
 
