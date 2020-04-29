@@ -44,7 +44,7 @@ class AuthDatabase:
                 cursor.execute(sql_hash_updater, (hash, username))
                 self.connection.commit()
 
-        except argon2.exceptions.VerifyMismatchError as error:
+        except argon2.exceptions.VerifyMismatchError:
             raise exceptions.Unauthorized("Wrong password")
 
     def _get_database_file(self):
