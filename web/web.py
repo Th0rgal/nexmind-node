@@ -44,7 +44,7 @@ class Web:
             if response.status < 400:  # if no error coccured
                 return response
             message = response.message
-            status = responses.status
+            status = response.status
 
         except exceptions.UserError as exception:
             message = exception.args[0]
@@ -54,9 +54,9 @@ class Web:
             message = exception.reason
             status = 500
 
-        except Exception as exception:
-            message = exception.args[0]
-            status = 500
+        #except Exception as exception:
+         #   message = exception.args[0]
+         #   status = 500
         print(message)
 
         return web.json_response({"error": message}, status=status)
