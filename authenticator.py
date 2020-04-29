@@ -9,17 +9,17 @@ class AuthDatabase:
         self.password_hasher = argon2.PasswordHasher()
         self.connection = self._create_connection(self._get_database_file())
         if not self._has_users_table(self.connection):
-            self._create_users_table(connection)
+            self._create_users_table(self.connection)
 
     def register(self, username, password):
 
         cursor = self.connection.cursor()
-        hash = password_hasher.hash(password)
+        hash = self.password_hasher.hash(password)
 
         try:
             cursor.execute("INSERT INTO users VALUES (?, ?)", (username, hash))
 
-        except sqlite3.IntegrityError as error:
+        except sqlite3.IntegrityError:
             raise exceptions.Unauthorized("Username taken")
 
         self.connection.commit()
