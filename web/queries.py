@@ -170,25 +170,19 @@ class Queries:
 
         # save file infos
         dotfile_path = storage.get_file("." + hash)
-        if not os.path.exists(dotfile_path):
-            with open(dotfile_path, "w") as dotfile:
-                data = {
-                    database_name: {
-                        "name": name,
-                        "type": content_type,
-                        "desc": description,
-                    }
-                }
-                json.dump(data, dotfile)
-        else:
-            with open(dotfile_path, "r+") as dotfile:
+        if os.path.exists(dotfile_path):
+            with open(dotfile_path, "r") as dotfile:
                 data = json.load(dotfile)
-                data[database_name] = {
-                    "name": name,
-                    "type": content_type,
-                    "desc": description,
-                }
-                json.dump(data, dotfile)
+        else:
+            data = {}
+        with open(dotfile_path, "w") as dotfile:
+            data = json.load(dotfile)
+            data[database_name] = {
+                "name": name,
+                "type": content_type,
+                "desc": description,
+            }
+            json.dump(data, dotfile)
 
         storage.atto.Database(database_name).add_data((hash, spaces))
         return web.json_response({"stored": True, "size": size})
