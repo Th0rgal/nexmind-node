@@ -176,7 +176,6 @@ class Queries:
         else:
             data = {}
         with open(dotfile_path, "w") as dotfile:
-            data = json.load(dotfile)
             data[database_name] = {
                 "name": name,
                 "type": content_type,
