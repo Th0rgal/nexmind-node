@@ -7,7 +7,8 @@ from .queries import Queries
 
 
 class Web:
-    def __init__(self, auth_database):
+    def __init__(self, auth_database, args):
+        self.args = args
         self.queries = Queries(auth_database)
         self.app = web.Application(
             middlewares=[self.error_middleware, self.auth_middleware],
@@ -35,7 +36,7 @@ class Web:
             cors.add(route)
 
     def start(self):
-        web.run_app(self.app, port=8080)
+        web.run_app(self.app, path=self.args.path, port=self.args.port)
 
     @web.middleware
     async def error_middleware(self, request, handler):
@@ -54,9 +55,9 @@ class Web:
             message = exception.reason
             status = 500
 
-        #except Exception as exception:
-         #   message = exception.args[0]
-         #   status = 500
+        # except Exception as exception:
+        #   message = exception.args[0]
+        #   status = 500
         print(message)
 
         return web.json_response({"error": message}, status=status)
