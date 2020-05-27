@@ -69,7 +69,7 @@ class Queries:
         output = {}
         for result in results:
             with open(storage.get_file("." + result[0])) as json_file:
-                dotfile_content = json.load(json_file)
+                dotfile_content = json.load(json_file)[database_name]
                 dotfile_content["spaces"] = list(result[1])
                 output[result[0]] = dotfile_content
 
@@ -77,7 +77,9 @@ class Queries:
 
     async def download(self, request):
 
-        if not request.username:
+        if request.username:
+            database_name = hashlib.sha256(request.username.encode("utf-8")).hexdigest()
+        else:
             raise exceptions.Unauthorized("A valid token is needed")
 
         data = await request.post()
@@ -88,18 +90,20 @@ class Queries:
         if not os.path.exists(file_path) or not os.path.exists(dotfile_path):
             raise exceptions.NotFound("file <{}> does not exist".format(hash))
         with open(dotfile_path) as dotfile:
-            dotfile_content = json.load(dotfile)
+            dotfile_content = json.load(dotfile)[database_name]
             name = dotfile_content["name"]
 
         response = web.StreamResponse()
-        response.headers['Content-Type'] = 'application/octet-stream'
-        response.headers['Content-Disposition'] = "attachment; filename*=UTF-8''{}".format(
+        response.headers["Content-Type"] = "application/octet-stream"
+        response.headers[
+            "Content-Disposition"
+        ] = "attachment; filename*=UTF-8''{}".format(
             urllib.parse.quote(name, safe="")  # replace with the filename
         )
         response.enable_chunked_encoding()
         await response.prepare(request)
 
-        with open(file_path, 'rb') as fd:  # replace with the path
+        with open(file_path, "rb") as fd:  # replace with the path
             for chunk in iter(lambda: fd.read(1024), b""):
                 await response.write(chunk)
         await response.write_eof()
@@ -165,10 +169,19 @@ class Queries:
                 f.write(chunk)
 
         # save file infos
-        with open(storage.get_file("." + hash), "w") as dotfile:
-            json.dump(
-                {"name": name, "type": content_type, "desc": description}, dotfile
-            )
+        dotfile_path = storage.get_file("." + hash)
+        if os.path.exists(dotfile_path):
+            with open(dotfile_path, "r") as dotfile:
+                data = json.load(dotfile)
+        else:
+            data = {}
+        with open(dotfile_path, "w") as dotfile:
+            data[database_name] = {
+                "name": name,
+                "type": content_type,
+                "desc": description,
+            }
+            json.dump(data, dotfile)
 
         storage.atto.Database(database_name).add_data((hash, spaces))
         return web.json_response({"stored": True, "size": size})
