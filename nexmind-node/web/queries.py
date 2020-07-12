@@ -110,6 +110,29 @@ class Queries:
 
         return response
 
+    async def delete(self, request):
+
+        if request.username:
+            database_name = hashlib.sha256(request.username.encode("utf-8")).hexdigest()
+        else:
+            raise exceptions.Unauthorized("A valid token is needed")
+
+        data = await request.post()
+        hash = data["hash"]
+
+        file_path = storage.get_file(hash)
+        dotfile_path = storage.get_file("." + hash)
+        if not os.path.exists(file_path) or not os.path.exists(dotfile_path):
+            raise exceptions.NotFound("file <{}> does not exist".format(hash))
+        with open(dotfile_path) as dotfile:
+            dotfile_content = json.load(dotfile)[database_name]
+            spaces = dotfile_content["spaces"]
+        storage.atto.Database(database_name).remove_data((hash, spaces))
+        os.remove(file_path)
+        os.remove(dotfile_path)
+
+        return web.json_response({"deleted": True})
+
     async def upload(self, request):
 
         """ EXAMPLE (curl)
