@@ -21,6 +21,7 @@ class Web:
                 web.post("/logout", self.queries.logout),
                 web.post("/search", self.queries.search),
                 web.post("/download", self.queries.download),
+                web.post("/delete", self.queries.delete),
                 web.post("/upload", self.queries.upload),
             ]
         )

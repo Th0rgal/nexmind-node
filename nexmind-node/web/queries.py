@@ -125,12 +125,17 @@ class Queries:
         if not os.path.exists(file_path) or not os.path.exists(dotfile_path):
             raise exceptions.NotFound("file <{}> does not exist".format(hash))
         with open(dotfile_path) as dotfile:
-            dotfile_content = json.load(dotfile)[database_name]
-            spaces = dotfile_content["spaces"]
+            dotfile_content = json.load(dotfile)
+            user_dotfile_content = dotfile_content[database_name]
+            spaces = user_dotfile_content["spaces"]
         storage.atto.Database(database_name).remove_data((hash, spaces))
-        os.remove(file_path)
-        os.remove(dotfile_path)
-
+        if len(dotfile_content) == 1:
+            os.remove(file_path)
+            os.remove(dotfile_path)
+        else:
+            del dotfile_content[database_name]
+            with open(dotfile_path, "w") as dotfile:
+                json.dump(dotfile_content, dotfile)
         return web.json_response({"deleted": True})
 
     async def upload(self, request):
